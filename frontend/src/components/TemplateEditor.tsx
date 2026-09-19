@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Dispatch } from 'react'
-import { AlignLeft, ArrowUpRight, ChevronDown, CircleAlert, Code2, Eye, Info, Layers3, MessageSquare, Search, TriangleAlert } from 'lucide-react'
+import { ChevronDown, CircleAlert, Code2, Eye, Info, Layers3, MessageSquare, Search, TriangleAlert } from 'lucide-react'
 import type { TemplateComment, TemplateDetail, TemplateItem } from '../contracts'
 import { commentPreview, sourcePlainText } from '../lib/preview'
 import type { DraftAction, ItemMatch, SectionMatch } from '../lib/template'
@@ -144,9 +144,7 @@ export function TemplateEditor({
       <div className="section-editor-heading">
         <div className="section-editor-icon"><Layers3 size={23} aria-hidden="true" /></div>
         <div className="section-title-field"><label htmlFor={`section-name-${section.id}`}>SECTION {String(position).padStart(2, '0')} <span>OF {formatNumber(template.sections.length)}</span></label><input id={`section-name-${section.id}`} aria-label="Section name" value={section.name} onChange={(event) => dispatch({ type: 'section', sectionId: section.id, name: event.target.value })} disabled={disabled} /><p>{formatNumber(section.items.length)} items <span aria-hidden="true">·</span> {formatNumber(countSectionComments(section))} comments</p></div>
-        <span className="hierarchy-label"><AlignLeft size={15} aria-hidden="true" />Template content</span>
       </div>
-      <div className="editor-guidance"><Info size={15} aria-hidden="true" /><p>Edit names and comment content below. Source fields and hierarchy stay intact.</p><button className="text-button" type="button" onClick={onReview}>Import review<ArrowUpRight size={14} aria-hidden="true" /></button></div>
       {query.trim() && <div className="search-banner"><Search size={15} aria-hidden="true" /><span>Showing matching content for <strong>“{query}”</strong>. The complete template will still be saved.</span><button className="text-button" type="button" onClick={onClearSearch}>Show all</button></div>}
       <div className="items-list">
         {items.map((itemMatch, index) => <ItemEditor

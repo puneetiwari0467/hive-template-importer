@@ -38,7 +38,7 @@ export function ImportDialog({
   }
 
   return (
-    <Dialog title="Bring your template along." description="Import an inspection template workbook. Review the exact counts, warnings and original source before making it your own." onClose={onClose} busy={busy} wide>
+    <Dialog title="Bring your template along." description="Use Spectora's Export to spreadsheet > Export HTML Text. The file must be a real Excel workbook; renaming a text or PDF file to .xls does not convert it." onClose={onClose} busy={busy} wide>
       <form onSubmit={(event) => {
         event.preventDefault()
         if (busy) return
@@ -55,7 +55,7 @@ export function ImportDialog({
           aria-busy={busy}
         >
           <div className="drop-zone-icon">{file ? <FileSpreadsheet size={28} aria-hidden="true" /> : <Upload size={28} aria-hidden="true" />}</div>
-          {file ? <><strong className="selected-file-name">{file.name}</strong><p>{(file.size / 1024).toLocaleString(undefined, { maximumFractionDigits: 1 })} KiB · Ready for server validation</p></> : <><strong>Drop your workbook here</strong><p>Excel .xls or .xlsx · Up to 10 MiB</p></>}
+          {file ? <><strong className="selected-file-name">{file.name}</strong><p>{(file.size / 1024).toLocaleString(undefined, { maximumFractionDigits: 1 })} KiB · File selected; contents checked on import</p></> : <><strong>Drop your workbook here</strong><p>Excel .xls or .xlsx · Up to 10 MiB</p></>}
           <input ref={fileInput} id={inputId} type="file" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Select Excel workbook" className="file-input" disabled={busy} onChange={(event) => chooseFiles(event.target.files)} />
           <button type="button" className="button button-outline" disabled={busy} onClick={() => { if (fileInput.current) { fileInput.current.value = ''; fileInput.current.click() } }}>{file ? 'Choose a different workbook' : 'Choose a workbook'}</button>
           {file && <button type="button" className="text-button remove-file" disabled={busy} onClick={() => { setFile(null); setValidation(null) }}><X size={13} aria-hidden="true" />Remove file</button>}

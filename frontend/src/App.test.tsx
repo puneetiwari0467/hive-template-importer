@@ -42,9 +42,13 @@ function mockApi() {
   }
 }
 
+async function expectTemplate(name: string) {
+  await waitFor(() => expect(screen.getByRole('textbox', { name: /^Template name$/ })).toHaveValue(name))
+}
+
 async function readyApp() {
   render(<App />)
-  await screen.findByDisplayValue('Home inspection sample')
+  await expectTemplate('Home inspection sample')
 }
 
 describe('end-to-end client state with unit-test API mocks', () => {
@@ -54,7 +58,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     localStorage.clear()
     const api = mockApi()
     render(<StrictMode><App /></StrictMode>)
-    await screen.findByDisplayValue('Home inspection sample')
+    await expectTemplate('Home inspection sample')
     expect(api.create).toHaveBeenCalledTimes(1)
     expect(api.get).toHaveBeenCalledWith('test-token', api.original.id)
     expect(screen.getByRole('textbox', { name: 'Section name' })).toHaveValue('Exterior')
@@ -91,6 +95,58 @@ describe('end-to-end client state with unit-test API mocks', () => {
     window.dispatchEvent(afterSave)
     expect(afterSave.defaultPrevented).toBe(false)
     expect(localStorage.length).toBe(1)
+  })
+
+  it('keeps editing controls and import warnings without the oversized dashboard chrome', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    api.get.mockResolvedValue({
+      ...api.original,
+      warningCount: 1,
+      importReport: {
+        ...api.original.importReport,
+        warnings: [{ code: 'PREVIEW_SANITIZED', severity: 'warning', message: 'Source retained; preview simplified.' }],
+      },
+    })
+    await readyApp()
+    expect(screen.queryByText('YOUR EXPERTISE. A BETTER STARTING POINT.')).not.toBeInTheDocument()
+    expect(screen.queryByText('A little more inspecting.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Duplicate selected template' })).not.toBeInTheDocument()
+    expect(document.querySelector('.template-stats')).not.toBeInTheDocument()
+    expect(document.querySelector('.topbar')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '1 import warning' }))
+    expect(screen.getByRole('heading', { name: 'Import review' })).toBeInTheDocument()
+    expect(screen.getByText('Source retained; preview simplified.')).toBeInTheDocument()
+  })
+
+  it('keeps unsaved comment text when navigating with the compact section selector', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    await readyApp()
+    fireEvent.change(screen.getByLabelText('Comment text / HTML'), { target: { value: 'Keep this section draft.' } })
+    const picker = screen.getByRole('combobox', { name: 'Select section' })
+    await user.selectOptions(picker, api.original.sections[1].id)
+    expect(screen.getByRole('textbox', { name: 'Section name' })).toHaveValue('Roofing')
+    await user.selectOptions(picker, api.original.sections[0].id)
+    expect(screen.getByLabelText('Comment text / HTML')).toHaveValue('Keep this section draft.')
+    expect(api.update).not.toHaveBeenCalled()
+  })
+
+  it('uses the same unsaved-change protection for the compact template selector', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    const other = otherTemplate()
+    api.list.mockResolvedValue({ templates: [api.original, other] })
+    await readyApp()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Template name' }), { target: { value: 'Do not lose this draft' } })
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Current template' }), other.id)
+    expect(screen.getByRole('dialog', { name: 'Switch templates without saving?' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(screen.getByRole('textbox', { name: 'Template name' })).toHaveValue('Do not lose this draft')
+    expect(screen.getByRole('combobox', { name: 'Current template' })).toHaveValue(api.original.id)
+    expect(api.get).toHaveBeenCalledTimes(1)
   })
 
   it('searches across comment text and sensibly opens a matching section without modifying source', async () => {
@@ -130,7 +186,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     expect(api.get).toHaveBeenCalledTimes(1)
     api.get.mockResolvedValue({ ...api.original, version: 4, name: 'Server version' })
     await user.click(screen.getByRole('button', { name: 'Reload latest version' }))
-    await screen.findByDisplayValue('Server version')
+    await expectTemplate('Server version')
     expect(api.update).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
   })
@@ -149,7 +205,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     api.get.mockResolvedValue(otherTemplate())
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     await user.click(screen.getByRole('button', { name: 'Retry loading' }))
-    await screen.findByDisplayValue('Other inspection template')
+    await expectTemplate('Other inspection template')
     expect(api.update).not.toHaveBeenCalled()
   })
 
@@ -163,7 +219,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     expect(localStorage.getItem(WORKSPACE_TOKEN_KEY)).toBe('test-token')
     expect(api.create).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Retry' }))
-    await screen.findByDisplayValue('Home inspection sample')
+    await expectTemplate('Home inspection sample')
     expect(localStorage.getItem(WORKSPACE_TOKEN_KEY)).toBe('test-token')
   })
 
@@ -175,6 +231,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Template name' }), { target: { value: 'Kept draft' } })
     await user.click(screen.getByRole('button', { name: 'Import a template' }))
     await user.click(screen.getByRole('button', { name: 'Continue to import' }))
+    expect(screen.getByText(/renaming a text or PDF file to .xls does not convert it/)).toBeInTheDocument()
     const picker = screen.getByLabelText('Select Excel workbook')
     fireEvent.change(picker, { target: { files: [new File(['bad'], 'not-a-workbook.txt')] } })
     expect(screen.getByRole('alert')).toHaveTextContent('.xls or .xlsx')
@@ -195,7 +252,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     await user.click(screen.getByRole('button', { name: 'Import a template' }))
     await user.upload(screen.getByLabelText('Select Excel workbook'), new File(['sample workbook bytes'], 'sample.xlsx'))
     await user.click(screen.getByRole('button', { name: 'Import workbook' }))
-    await screen.findByDisplayValue('Imported workbook')
+    await expectTemplate('Imported workbook')
     expect(screen.getByRole('heading', { name: 'Import review' })).toBeInTheDocument()
     expect(screen.getByText('Four source rows were skipped with a documented reason.')).toBeInTheDocument()
     expect(screen.getByText(/Source and imported row totals differ/)).toBeInTheDocument()
@@ -212,7 +269,7 @@ describe('end-to-end client state with unit-test API mocks', () => {
     await user.click(screen.getByRole('button', { name: 'Continue to duplicate' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Name your copy' }), { target: { value: '  Independent copy  ' } })
     await user.click(screen.getByRole('button', { name: 'Create independent copy' }))
-    await screen.findByDisplayValue('Independent copy')
+    await expectTemplate('Independent copy')
     expect(api.duplicate).toHaveBeenCalledWith('test-token', api.original.id, 'Independent copy')
     expect(api.update).not.toHaveBeenCalled()
     expect(within(screen.getByRole('navigation', { name: 'Saved templates' })).getByRole('button', { name: /Home inspection sample/ })).toBeInTheDocument()

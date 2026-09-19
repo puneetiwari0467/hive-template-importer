@@ -19,11 +19,18 @@ export function SectionNavigator({
 }) {
   return (
     <aside className="section-rail" aria-label="Template structure">
-      <div className="structure-heading"><ListTree size={17} aria-hidden="true" /><h2>Template structure</h2><span className="count-pill">{formatNumber(totalSections)}</span></div>
+      <div className="structure-heading"><ListTree size={18} aria-hidden="true" /><h2>Sections</h2><span className="count-pill">{formatNumber(totalSections)}</span></div>
+      <div className="compact-section-picker">
+        <label className="sr-only" htmlFor="section-picker">Select section</label>
+        <select id="section-picker" value={selectedId ?? ''} disabled={result.sections.length === 0} onChange={(event) => onSelect(event.target.value)}>
+          {result.sections.length === 0 && <option value="">No matching sections</option>}
+          {result.sections.map(({ section, ordinal }) => <option key={section.id} value={section.id}>{String(ordinal).padStart(2, '0')} - {section.name || 'Untitled section'}</option>)}
+        </select>
+      </div>
       <div className="search-field"><Search size={16} aria-hidden="true" /><input aria-label="Search items and comments" type="search" placeholder="Find items or comments…" value={query} onChange={(event) => onQuery(event.target.value)} />{query && <button className="icon-button" type="button" aria-label="Clear search" onClick={() => onQuery('')}><X size={14} aria-hidden="true" /></button>}</div>
       {result.isSearching
-        ? <p className="search-count" role="status">{formatNumber(result.itemCount)} matching items · {formatNumber(result.commentCount)} comments<span>Names include their child comments.</span></p>
-        : <p className="structure-caption">SECTIONS <span>ITEMS / COMMENTS</span></p>}
+        ? <p className="search-count" role="status">{formatNumber(result.itemCount)} matching items · {formatNumber(result.commentCount)} comments</p>
+        : null}
       <nav className="section-list" aria-label="Sections">
         {result.sections.map(({ section, ordinal, matchingItems, matchingComments }) => (
           <button
@@ -40,7 +47,6 @@ export function SectionNavigator({
         ))}
         {result.sections.length === 0 && <div className="rail-empty"><Search size={24} aria-hidden="true" /><strong>No matching content</strong><p>Try a different item, comment name or phrase.</p><button className="text-button" type="button" onClick={() => onQuery('')}>Clear search</button></div>}
       </nav>
-      <div className="structure-footnote"><span className="small-dot" aria-hidden="true" />Section → item → comment<p>Original relationships stay intact.</p></div>
     </aside>
   )
 }

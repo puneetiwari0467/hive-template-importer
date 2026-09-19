@@ -10,6 +10,11 @@ Repository: https://github.com/puneetiwari0467/hive-template-importer
 
 No login is required. A fresh browser opens its own imported sample.
 
+Use a full browser window when recording so the section navigation and editor
+are visible side by side. Narrow embedded previews use template/section dropdowns.
+Use the actual file in `sample-data/` for the successful import. The file in
+`test-data/` is deliberately invalid and belongs only in the failure demonstration.
+
 ## 0:00-0:40 - Introduce yourself
 
 Briefly explain your background and that this is a template migration tool.

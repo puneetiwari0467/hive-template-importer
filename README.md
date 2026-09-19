@@ -24,9 +24,19 @@ not real customer data.
 - Creates a completely independent copy of a template.
 - Gives each browser an isolated, pre-seeded demo workspace without requiring
   an account or exposing another reviewer's templates.
+- Prioritizes the editing canvas: compact toolbar, readable full template names,
+  larger section navigation, and compact selectors in narrow windows.
 
 This is a **template-management application**, not an inspection report writer.
 Use shareable sample data only.
+
+### Which file should I import?
+
+For a successful demo, use the actual workbook in `sample-data/`, or click
+**Download sample workbook** in the app. The file
+`test-data/not-a-workbook.xls` is intentionally plain text, despite its extension.
+It is only for demonstrating a rejected upload in the walkthrough, not a valid
+template. Rejecting it is the expected validation behavior.
 
 ## Repository
 
@@ -151,7 +161,7 @@ records in its own workspaces; it never changes another visitor's workspace.
 ### Executed checks
 
 - **74 backend tests passed, zero skips**, including real-MySQL integration.
-- **40 frontend tests passed**, plus TypeScript and the production build.
+- **43 frontend tests passed**, plus TypeScript and the production build.
 - The HTTP smoke suite passed against both local MySQL and the **live Azure
   deployment with MySQL 8.4**.
 - Live browser checks verified upload, edit/save/reload, independent duplication,
@@ -159,6 +169,9 @@ records in its own workspaces; it never changes another visitor's workspace.
 - Saved templates, edits, copies and workspace access survived an Azure
   application restart.
 - `npm audit` reported zero vulnerabilities after updating the test runner.
+- Layout checks cover desktop, tablet and small embedded-browser sizes.
+  At 1440 x 900, the editing workspace has 759 px of height (about 84% of the
+  viewport), with full-name navigation and 14-15 px editing text.
 
 GitHub Actions is not enabled. The optional
 [workflow example](docs/ci-workflow.example.yml) is included for future use;

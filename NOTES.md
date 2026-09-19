@@ -139,7 +139,7 @@ Y1 plan and was not changed or restarted.
 
 ## Verification record
 
-- Frontend: 40 tests passed across API/error handling, safe previews, draft
+- Frontend: 43 tests passed across API/error handling, safe previews, draft
   serialization, workspace persistence, import/copy UI and conflict handling.
   These use explicit test-only API mocks, not a database substitute.
 - Frontend TypeScript check and Vite production build passed.
@@ -185,6 +185,27 @@ actually exploring it.
 
 The video must be recorded in Puneet's own voice, with a camera introduction.
 See `docs/WALKTHROUGH.md` for the 8-10 minute outline.
+
+## Readability follow-up
+
+- Removed the oversized title/statistics area, duplicate navigation labels,
+  repeated duplicate action, marketing text, and persistent explanatory panels.
+  Import details and warnings remain accessible in Import review and Source audit;
+  workspace/privacy information is available in a compact disclosure.
+- Full template names wrap instead of being line-clamped. Desktop template and
+  section rails are wider, with larger labels and comment editing/preview text.
+- Narrow windows use native template/section selectors instead of squeezing long
+  lists into short scrolling boxes. Section navigation retains unsaved drafts,
+  and template switching retains the same discard confirmation.
+- Browser measurements passed at 1440x900, 1280x720, 1024x768, 503x350 and 390x844:
+  no horizontal page overflow, at least 75% desktop height for the editing
+  workspace, readable text, and natural document scrolling in short/narrow panes.
+- A desktop viewport override left on the integrated browser during testing was
+  cleared. Responsive checks now use a separate test page, not the user's live
+  editor.
+- Import validation was not weakened: the real Spectora sample still imports;
+  the intentionally invalid text fixture still returns HTTP 422. The upload
+  dialog now explains this distinction before submission.
 
 ## Tools and contributions
 
