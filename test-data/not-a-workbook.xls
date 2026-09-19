@@ -1,0 +1,2 @@
+This is deliberately not an Excel workbook.
+Use this harmless fixture to demonstrate a visible import failure and verify that no partial template is saved.
