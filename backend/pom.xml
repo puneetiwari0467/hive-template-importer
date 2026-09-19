@@ -79,6 +79,11 @@
                     <include>*.xlsx</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>../frontend/dist</directory>
+                <targetPath>static</targetPath>
+                <filtering>false</filtering>
+            </resource>
         </resources>
         <plugins>
             <plugin>
