@@ -123,6 +123,11 @@ public class TemplateService {
     }
 
     @Transactional
+    public void delete(String workspaceId, String templateId) {
+        repository.delete(workspaceId, templateId);
+    }
+
+    @Transactional
     public TemplateDetail update(String workspaceId, String templateId, TemplateUpdate update) {
         var original = repository.find(workspaceId, templateId, true);
         if (update.version() == null || update.version() != original.version()) {

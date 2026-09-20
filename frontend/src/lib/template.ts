@@ -16,6 +16,7 @@ export interface DraftState {
 
 export type DraftAction =
   | { type: 'loaded'; template: TemplateDetail }
+  | { type: 'cleared' }
   | { type: 'name'; name: string }
   | { type: 'section'; sectionId: string; name: string }
   | { type: 'item'; sectionId: string; itemId: string; name: string }
@@ -54,6 +55,7 @@ export function isDraftDirty(state: DraftState): boolean {
 
 export function draftReducer(state: DraftState, action: DraftAction): DraftState {
   if (action.type === 'loaded') return { draft: action.template, saved: action.template }
+  if (action.type === 'cleared') return { draft: null, saved: null }
   if (!state.draft) return state
   if (action.type === 'name') return { ...state, draft: { ...state.draft, name: action.name } }
 

@@ -113,6 +113,39 @@ async function request<T>(path: string, token?: string, options: RequestInit = {
   return body as T
 }
 
+async function requestNoContent(path: string, token: string, method: string): Promise<void> {
+  const headers = new Headers({ Accept: 'application/json' })
+  headers.set('Authorization', `Bearer ${token}`)
+
+  let response: Response
+  try {
+    response = await fetch(apiUrl(path), { method, headers, signal: AbortSignal.timeout(90_000) })
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError'
+    throw new ApiError(
+      0,
+      timedOut ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+      timedOut
+        ? 'The request timed out. The template may or may not have been removed; reload your library to confirm before retrying.'
+        : 'Check your connection and that the API is running, then try again. Your browser credential has been kept.',
+    )
+  }
+
+  if (response.ok) return
+  let parsed: ApiErrorBody | null = null
+  try {
+    parsed = errorBody(JSON.parse(await response.text()))
+  } catch {
+    parsed = null
+  }
+  throw new ApiError(
+    response.status,
+    parsed?.code ?? 'REQUEST_FAILED',
+    parsed?.message ?? `The server rejected this request (HTTP ${response.status}).`,
+    parsed?.details,
+  )
+}
+
 export function validateUpload(file: File): string | null {
   if (!/\.(xls|xlsx)$/i.test(file.name)) {
     return 'Choose an Excel workbook ending in .xls or .xlsx. CSV, PDF and renamed files are not supported.'
@@ -137,6 +170,8 @@ export const templatesApi = {
       method: 'POST',
       body: JSON.stringify({ name }),
     }),
+  remove: (token: string, id: string) =>
+    requestNoContent(`/templates/${encodeURIComponent(id)}`, token, 'DELETE'),
   import: (token: string, file: File, name: string) => {
     const body = new FormData()
     body.append('file', file)

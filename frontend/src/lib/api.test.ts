@@ -35,6 +35,28 @@ describe('HTTP client', () => {
     expect(new Headers(options?.headers).has('Content-Type')).toBe(false)
   })
 
+  it('accepts an empty 204 response when deleting a template', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }))
+    await expect(templatesApi.remove('test-token', 'template/id')).resolves.toBeUndefined()
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/templates/template%2Fid')
+    expect(options?.method).toBe('DELETE')
+    expect(new Headers(options?.headers).get('Authorization')).toMatch(/^Bearer .+/)
+  })
+
+  it('keeps structured delete failures', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      code: 'NOT_FOUND',
+      message: 'Template not found.',
+      details: [],
+    }), { status: 404 }))
+    await expect(templatesApi.remove('test-token', 'missing')).rejects.toMatchObject({
+      status: 404,
+      code: 'NOT_FOUND',
+      message: 'Template not found.',
+    })
+  })
+
   it.each([401, 409, 413, 422, 429, 500])('retains structured HTTP %i errors and details', async (status) => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ code: 'SPECIFIC_ERROR', message: 'An actionable server message', details: ['First detail', 'Second detail'] }), { status }))
     await expect(templatesApi.list('test-token')).rejects.toMatchObject({

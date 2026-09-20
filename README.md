@@ -22,6 +22,7 @@ not real customer data.
 - Edits section names, item names, comment names and comment text/HTML.
 - Persists edits in MySQL and detects conflicting saves from another tab.
 - Creates a completely independent copy of a template.
+- Deletes unwanted templates after explicit confirmation; independent copies remain.
 - Gives each browser an isolated, pre-seeded demo workspace without requiring
   an account or exposing another reviewer's templates.
 - Prioritizes the editing canvas: compact toolbar, readable full template names,

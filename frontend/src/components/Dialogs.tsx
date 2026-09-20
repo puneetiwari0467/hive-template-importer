@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'react'
-import { ArrowRight, Copy, FileSpreadsheet, LockKeyhole, Upload, X } from 'lucide-react'
+import { ArrowRight, Copy, FileSpreadsheet, LockKeyhole, Trash2, Upload, X } from 'lucide-react'
 import { ApiError, sampleUrl, validateUpload } from '../lib/api'
 import { Dialog, ErrorNotice, Spinner } from './Ui'
 
@@ -97,6 +97,27 @@ export function DuplicateDialog({
       {error && <ErrorNotice error={error} hasDraft />}
       <div className="dialog-actions"><button type="button" className="button button-quiet" disabled={busy} onClick={onClose}>Cancel</button><button type="submit" className="button button-primary" disabled={busy || !name.trim()}>{busy ? <Spinner label="Creating copy…" /> : <><Copy size={16} aria-hidden="true" />Create independent copy</>}</button></div>
     </form>
+  </Dialog>
+}
+
+export function DeleteDialog({
+  templateName,
+  busy,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  templateName: string
+  busy: boolean
+  error: ApiError | null
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  return <Dialog title="Delete this template?" description="This permanently removes the template and all of its sections, items and comments from this workspace. It cannot be undone." onClose={onClose} busy={busy}>
+    <div className="delete-source"><div className="delete-source-icon"><Trash2 size={22} aria-hidden="true" /></div><div><span>DELETING TEMPLATE</span><strong>{templateName}</strong></div></div>
+    <p className="dialog-hint">Independent copies of this template are not deleted and keep their own content. The original Spectora workbook in the repository is unaffected.</p>
+    {error && <ErrorNotice error={error} />}
+    <div className="dialog-actions"><button type="button" className="button button-quiet" disabled={busy} onClick={onClose}>Cancel</button><button type="button" className="button button-danger" autoFocus disabled={busy} onClick={onConfirm}>{busy ? <Spinner label="Deleting…" /> : <><Trash2 size={16} aria-hidden="true" />Delete template</>}</button></div>
   </Dialog>
 }
 

@@ -130,6 +130,13 @@ public class TemplateRepository {
                 summary.counts(), summary.warningCount(), root.report(), tree);
     }
 
+    public void delete(String workspaceId, String templateId) {
+        // Child rows cascade; copies keep their content and lose only the duplicate_of reference.
+        if (jdbc.update("DELETE FROM templates WHERE id = ? AND workspace_id = ?", templateId, workspaceId) != 1) {
+            throw ApiException.notFound();
+        }
+    }
+
     public void insert(String workspaceId, TemplateDetail template) {
         jdbc.update("""
                         INSERT INTO templates (id, workspace_id, name, version, source_file_name, source_sha256,

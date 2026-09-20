@@ -4,7 +4,7 @@ import { ApiError, asApiError, templatesApi } from '../lib/api'
 import { draftReducer, isDraftDirty, toTemplateUpdate, upsertSummary } from '../lib/template'
 import { ensureWorkspace, provisionWorkspace } from '../lib/workspace'
 
-type Operation = 'save' | 'switch' | 'reload' | 'import' | 'duplicate' | null
+type Operation = 'save' | 'switch' | 'reload' | 'import' | 'duplicate' | 'delete' | null
 type Phase = 'loading' | 'ready' | 'error'
 
 interface RequestAttempt {
@@ -128,6 +128,50 @@ export function useTemplateWorkspace() {
     return perform('duplicate', (credential) => templatesApi.duplicate(credential, current.id, name), 'Independent copy created. The original template is unchanged.')
   }, [perform, state.saved])
 
+  const removeTemplate = useCallback(async (id: string): Promise<boolean> => {
+    if (!token || operationLock.current) return false
+    operationLock.current = true
+    lastAttempt.current = null
+    setOperation('delete')
+    setFailedOperation(null)
+    setActionError(null)
+    setNotice(null)
+    try {
+      await templatesApi.remove(token, id)
+    } catch (error) {
+      setActionError(asApiError(error))
+      setFailedOperation('delete')
+      operationLock.current = false
+      setOperation(null)
+      return false
+    }
+
+    const remaining = templates.filter((template) => template.id !== id)
+    setTemplates(remaining)
+    setNotice('Template deleted from this workspace.')
+    if (state.saved?.id === id) {
+      dispatch({ type: 'cleared' })
+      const next = remaining[0]
+      if (next) {
+        try {
+          acceptTemplate(await templatesApi.get(token, next.id))
+          setNotice('Template deleted. Another saved template is now open.')
+        } catch (error) {
+          const loadError = asApiError(error)
+          setActionError(new ApiError(
+            loadError.status,
+            loadError.code,
+            `The template was deleted, but the next saved template could not be opened. ${loadError.message}`,
+            loadError.details,
+          ))
+        }
+      }
+    }
+    operationLock.current = false
+    setOperation(null)
+    return true
+  }, [token, templates, state.saved, acceptTemplate])
+
   const retry = useCallback(() => {
     const attempt = lastAttempt.current
     if (!attempt) return Promise.resolve(false)
@@ -152,6 +196,7 @@ export function useTemplateWorkspace() {
     save,
     importTemplate,
     duplicate,
+    removeTemplate,
     retry,
     clearActionError: () => { setActionError(null); setFailedOperation(null) },
     clearNotice: () => setNotice(null),

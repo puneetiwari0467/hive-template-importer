@@ -15,6 +15,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -84,6 +85,12 @@ public class TemplateController {
         guard.importAttempt(workspaceId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.duplicate(workspaceId, id.toString(), duplicate.name()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id, HttpServletRequest request) {
+        service.delete(workspace(request), id.toString());
+        return ResponseEntity.noContent().build();
     }
 
     private static String workspace(HttpServletRequest request) {

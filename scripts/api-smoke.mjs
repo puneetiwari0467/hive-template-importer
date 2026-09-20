@@ -139,6 +139,11 @@ const unchanged = await request(`/templates/${saved.id}`, { token });
 assert.deepEqual(hierarchy(unchanged), hierarchy(saved));
 results.push("Deep duplicate has independent IDs and edits never change the original");
 
+await request(`/templates/${copied.id}`, { token, method: "DELETE", status: 204 });
+await request(`/templates/${copied.id}`, { token, status: 404 });
+assert.deepEqual(hierarchy(await request(`/templates/${saved.id}`, { token })), hierarchy(saved));
+results.push("Delete removes the selected template while leaving its original unchanged");
+
 const before = await request("/templates", { token });
 const invalid = new FormData();
 invalid.append("file", new Blob(["This is not a workbook."]), "invalid.xls");

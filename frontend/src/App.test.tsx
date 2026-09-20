@@ -39,6 +39,7 @@ function mockApi() {
     })),
     import: vi.spyOn(templatesApi, 'import').mockResolvedValue({ ...otherTemplate(), name: 'Imported inspection workbook' }),
     duplicate: vi.spyOn(templatesApi, 'duplicate').mockImplementation(async (_token, id, name) => ({ ...otherTemplate(), name, duplicateOf: id })),
+    remove: vi.spyOn(templatesApi, 'remove').mockResolvedValue(),
   }
 }
 
@@ -274,6 +275,49 @@ describe('end-to-end client state with unit-test API mocks', () => {
     expect(api.update).not.toHaveBeenCalled()
     expect(within(screen.getByRole('navigation', { name: 'Saved templates' })).getByRole('button', { name: /Home inspection sample/ })).toBeInTheDocument()
     expect(api.original.name).toBe('Home inspection sample')
+  })
+
+  it('requires confirmation for an unsaved draft before deleting and supports canceling', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    await readyApp()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Template name' }), { target: { value: 'Unsaved title' } })
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(screen.getByRole('dialog', { name: 'Delete without saving these changes?' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(screen.getByRole('textbox', { name: 'Template name' })).toHaveValue('Unsaved title')
+    expect(api.remove).not.toHaveBeenCalled()
+  })
+
+  it('deletes the selected template and opens another saved template', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    const other = otherTemplate()
+    api.list.mockResolvedValue({ templates: [api.original, other] })
+    api.get.mockImplementation(async (_token, id) => id === other.id ? other : api.original)
+    await readyApp()
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(screen.getByRole('dialog', { name: 'Delete this template?' })).toHaveTextContent('Home inspection sample')
+    await user.click(screen.getByRole('button', { name: 'Delete template' }))
+    await expectTemplate('Other inspection template')
+    expect(api.remove).toHaveBeenCalledWith('test-token', api.original.id)
+    expect(within(screen.getByRole('navigation', { name: 'Saved templates' })).queryByRole('button', { name: /Home inspection sample/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the empty library after deleting its last template and keeps failures recoverable', async () => {
+    const user = userEvent.setup()
+    const api = mockApi()
+    await readyApp()
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    api.remove.mockRejectedValueOnce(new ApiError(503, 'DATABASE_UNAVAILABLE', 'Delete unavailable.'))
+    await user.click(screen.getByRole('button', { name: 'Delete template' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Delete unavailable.')
+    expect(screen.getByRole('textbox', { name: 'Template name' })).toHaveValue('Home inspection sample')
+    api.remove.mockResolvedValue()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete template' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'Delete template' }))
+    expect(await screen.findByRole('heading', { name: 'Your library is ready for its first template.' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Template name' })).not.toBeInTheDocument()
   })
 
   it('keeps a failed-save draft editable and clears dirty tracking when the user reverts it', async () => {

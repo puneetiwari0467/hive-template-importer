@@ -29,11 +29,16 @@ or third-party login. A different browser gets a separate seeded workspace.
 | POST | `/api/templates/import` | Multipart `file`, optional `name` | `TemplateDetail` (201) |
 | PUT | `/api/templates/{id}` | `TemplateUpdate` | Updated `TemplateDetail` |
 | POST | `/api/templates/{id}/duplicate` | `{ "name": "Independent copy" }` | New `TemplateDetail` (201) |
+| DELETE | `/api/templates/{id}` | None | No content (204) |
 
 The update payload contains the entire existing hierarchy's editable fields.
 It cannot add, remove, or move records. IDs must belong to the same template and
 retain their parents. The version is checked transactionally; stale versions
 return 409 rather than overwriting another tab's edits.
+
+Deleting a template is workspace-scoped and cascades to its sections, items and
+comments. Independent copies are not deleted; their `duplicateOf` reference
+becomes null while their copied content remains intact.
 
 `contentHtml` is the exact editable source text or HTML; `originalHtml` retains
 the original imported field. `previewHtml` is an independently sanitized,

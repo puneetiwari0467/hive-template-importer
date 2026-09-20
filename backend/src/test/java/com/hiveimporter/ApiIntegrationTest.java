@@ -344,6 +344,49 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void deleteIsWorkspaceScopedCascadesChildrenAndKeepsIndependentCopies() {
+        var owner = createWorkspace();
+        var otherWorkspace = createWorkspace();
+        JsonNode original = get(owner, owner.templateId());
+        var cloneResponse = exchange("/api/templates/" + owner.templateId() + "/duplicate", HttpMethod.POST,
+                owner.token(), json.createObjectNode().put("name", "Independent survivor"));
+        assertThat(cloneResponse.getStatusCode().value()).isEqualTo(201);
+        String cloneId = cloneResponse.getBody().path("id").asText();
+
+        assertError(exchange("/api/templates/" + owner.templateId(), HttpMethod.DELETE,
+                otherWorkspace.token(), null), 404, "NOT_FOUND");
+        var deleted = exchange("/api/templates/" + owner.templateId(), HttpMethod.DELETE, owner.token(), null);
+        assertThat(deleted.getStatusCode().value()).isEqualTo(204);
+        assertThat(deleted.getBody()).isNull();
+        assertError(exchange("/api/templates/" + owner.templateId(), HttpMethod.GET,
+                owner.token(), null), 404, "NOT_FOUND");
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM template_sections WHERE template_id = ?",
+                Integer.class, owner.templateId())).isZero();
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM template_items i
+                JOIN template_sections s ON s.id = i.section_id
+                WHERE s.template_id = ?
+                """, Integer.class, owner.templateId())).isZero();
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM template_comments c
+                JOIN template_items i ON i.id = c.item_id
+                JOIN template_sections s ON s.id = i.section_id
+                WHERE s.template_id = ?
+                """, Integer.class, owner.templateId())).isZero();
+
+        JsonNode survivingCopy = get(owner, cloneId);
+        assertThat(survivingCopy.path("name").asText()).isEqualTo("Independent survivor");
+        assertThat(survivingCopy.path("duplicateOf").isNull()).isTrue();
+        assertThat(survivingCopy.path("counts")).isEqualTo(original.path("counts"));
+
+        var deleteCopy = exchange("/api/templates/" + cloneId, HttpMethod.DELETE, owner.token(), null);
+        assertThat(deleteCopy.getStatusCode().value()).isEqualTo(204);
+        JsonNode listed = exchange("/api/templates", HttpMethod.GET, owner.token(), null).getBody();
+        assertThat(listed.path("templates")).isEmpty();
+    }
+
+    @Test
     void concurrentSavesNeverLoseEditsAndExactlyOneVersionWins() throws Exception {
         var workspace = createWorkspace();
         var before = get(workspace, workspace.templateId());

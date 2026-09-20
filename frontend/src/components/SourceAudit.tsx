@@ -43,7 +43,7 @@ export function SourceAudit({ template }: { template: TemplateDetail }) {
 
   return (
     <div className="review-page audit-page">
-      <div className="review-heading"><div className="review-heading-icon"><Archive size={25} aria-hidden="true" /></div><div><p className="eyebrow">THE ORIGINAL, ALWAYS WITHIN REACH</p><h2>Source audit</h2><p>Read the untouched comment field and every metadata value returned by the importer. Source values are text only: links and HTML are never executed here.</p></div></div>
+      <div className="review-heading"><div className="review-heading-icon"><Archive size={25} aria-hidden="true" /></div><div><p className="eyebrow">THE ORIGINAL, ALWAYS WITHIN REACH</p><h2>Source audit</h2><p>Each card represents one original spreadsheet row. Its section and item appear as the breadcrumb, while the comment and every exported field remain available as read-only evidence. Links and HTML are never executed here.</p></div></div>
       <div className="audit-toolbar"><div className="search-field"><Search size={17} aria-hidden="true" /><input type="search" aria-label="Search original source records" placeholder="Find a source row, phrase or metadata value…" value={query} onChange={(event) => { setQuery(event.target.value); setLimit(25) }} />{query && <button className="icon-button" aria-label="Clear source search" type="button" onClick={() => { setQuery(''); setLimit(25) }}><X size={15} aria-hidden="true" /></button>}</div><p role="status">{formatNumber(filtered.length)} of {formatNumber(records.length)} source records</p></div>
       <div className="audit-records">
         {filtered.slice(0, limit).map(({ section, item, comment }) => (

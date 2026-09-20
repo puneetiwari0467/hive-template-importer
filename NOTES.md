@@ -139,15 +139,15 @@ Y1 plan and was not changed or restarted.
 
 ## Verification record
 
-- Frontend: 43 tests passed across API/error handling, safe previews, draft
-  serialization, workspace persistence, import/copy UI and conflict handling.
+- Frontend: 48 tests passed across API/error handling, safe previews, draft
+  serialization, workspace persistence, import/copy/delete UI and conflict handling.
   These use explicit test-only API mocks, not a database substitute.
 - Frontend TypeScript check and Vite production build passed.
 - A full npm dependency audit reported zero known vulnerabilities after updating
   Vitest to patched 4.1.11. The production bundle was unchanged by that
   development-tool update.
-- Backend: **74 tests passed with zero failures, errors or skips**, including
-  12 real-MySQL integration tests. The local isolated server was MySQL 8.0.46;
+- Backend: **75 tests passed with zero failures, errors or skips**, including
+  13 real-MySQL integration tests. The local isolated server was MySQL 8.0.46;
   it was not an H2 substitute and did not reuse an existing application database.
 - Parser tests compare every decoded cell value with the preserved metadata,
   verify names/content/hierarchy/order against the real source, and exercise
